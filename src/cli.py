@@ -61,6 +61,16 @@ def create_parser() -> argparse.ArgumentParser:
     # List command
     subparsers.add_parser("list", help="List all tasks")
 
+    # Complete command
+    complete_parser = subparsers.add_parser(
+        "complete", help="Toggle task completion status by ID"
+    )
+    complete_parser.add_argument(
+        "task_id",
+        type=str,
+        help="Task ID to toggle (positive integer)",
+    )
+
     return parser
 
 
@@ -401,3 +411,55 @@ def handle_list_command(args: argparse.Namespace, storage: TaskStorage) -> int:
     print(output)
 
     return 0
+
+
+def format_toggle_success_message(task: Task) -> str:
+    """
+    Format toggle success message.
+
+    Args:
+        task: The updated Task instance
+
+    Returns:
+        Success message string
+    """
+    symbol = "✓" if task.status == "complete" else "✗"
+    return f"{symbol} Task marked as {task.status} (ID: {task.id})"
+
+
+def handle_complete_command(args: argparse.Namespace, storage: TaskStorage) -> int:
+    """
+    Handle 'todo complete' command.
+
+    Validates ID, toggles status, and prints result.
+
+    Args:
+        args: Parsed arguments with task_id
+        storage: TaskStorage instance
+
+    Returns:
+        Exit code (0 for success, 1 for error)
+    """
+    from src.validators import validate_task_id
+
+    # Validate task ID format
+    is_valid, error_msg, task_id = validate_task_id(args.task_id)
+    if not is_valid:
+        error_output = format_error_message(error_msg or "Invalid ID")
+        print(error_output, file=sys.stderr)
+        return 1
+
+    assert task_id is not None
+
+    # Toggle status
+    updated_task = storage.toggle_status(task_id)
+
+    if updated_task:
+        success_msg = format_toggle_success_message(updated_task)
+        print(success_msg)
+        return 0
+    else:
+        error_msg = f"Task not found (ID: {task_id})"
+        error_output = format_error_message(error_msg)
+        print(error_output, file=sys.stderr)
+        return 1

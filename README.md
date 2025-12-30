@@ -7,6 +7,7 @@ A simple, robust command-line todo list application built with Python 3.13+ foll
 - **Add tasks** with title and optional description
 - **Update tasks** by ID (title, description, or both)
 - **Delete tasks** by ID with confirmation messages
+- **Toggle completion status** by ID (incomplete ↔ complete)
 - **Input validation** with clear error messages
 - **Unicode support** for international characters and emojis
 - **Sequential ID generation** for easy task tracking (deleted IDs never reused)
@@ -115,6 +116,25 @@ uv run python -m src.main update 1 --title "Shopping" --desc "Saturday morning"
 uv run python -m src.main update 1 --desc ""
 ```
 
+### Toggle a task's status (Mark Complete/Incomplete)
+
+Running the `complete` command toggles the status of a task between `complete` (✓) and `incomplete` (✗).
+
+```bash
+# Toggle task 1 status
+uv run python -m src.main complete 1
+```
+
+Output (if switching to complete):
+```
+✓ Task marked as complete (ID: 1)
+```
+
+Output (if switching back to incomplete):
+```
+✗ Task marked as incomplete (ID: 1)
+```
+
 ### Unicode support
 
 ```bash
@@ -173,6 +193,18 @@ uv run python -m src.main update abc --title "New title"
 # Empty title
 uv run python -m src.main update 1 --title ""
 # Error: Title cannot be empty
+```
+
+### Error handling for complete command
+
+```bash
+# Non-existent task
+uv run python -m src.main complete 999
+# Error: Task not found (ID: 999)
+
+# Invalid ID format
+uv run python -m src.main complete abc
+# Error: Task ID must be a positive integer
 ```
 
 ## Development

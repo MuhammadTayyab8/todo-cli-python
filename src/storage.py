@@ -252,3 +252,40 @@ class TaskStorage:
                 self._save()
                 return updated_task
         return None
+
+    def toggle_status(self, task_id: int) -> Task | None:
+        """
+        Toggle the completion status of a task by ID.
+
+        Switches from 'incomplete' to 'complete' and vice-versa.
+
+        Args:
+            task_id: The ID of the task to toggle
+
+        Returns:
+            Updated Task object if found, None if task not found
+
+        Examples:
+            >>> storage = TaskStorage()
+            >>> task = storage.add("Test")
+            >>> storage.toggle_status(task.id).status
+            'complete'
+            >>> storage.toggle_status(task.id).status
+            'incomplete'
+        """
+        for i, task in enumerate(self._tasks):
+            if task.id == task_id:
+                new_status = (
+                    "complete" if task.status == "incomplete" else "incomplete"
+                )
+                updated_task = Task(
+                    id=task.id,
+                    title=task.title,
+                    description=task.description,
+                    status=new_status,
+                    created_at=task.created_at,
+                )
+                self._tasks[i] = updated_task
+                self._save()
+                return updated_task
+        return None

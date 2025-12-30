@@ -41,6 +41,10 @@ def main() -> int:
         return handle_update_command(args, storage)
     elif args.command == "list":
         return handle_list_command(args, storage)
+    elif args.command == "complete":
+        from src.cli import handle_complete_command
+
+        return handle_complete_command(args, storage)
 
     # Unknown command (should not reach here due to argparse validation)
     return 1
