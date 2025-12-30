@@ -38,6 +38,26 @@ def create_parser() -> argparse.ArgumentParser:
         help="Task ID to delete (positive integer)",
     )
 
+    # Update command
+    update_parser = subparsers.add_parser("update", help="Update a task by ID")
+    update_parser.add_argument(
+        "task_id",
+        type=str,
+        help="Task ID to update (positive integer)",
+    )
+    update_parser.add_argument(
+        "--title",
+        type=str,
+        default=None,
+        help="New task title (1-100 characters)",
+    )
+    update_parser.add_argument(
+        "--desc",
+        type=str,
+        default=None,
+        help="New task description (max 500 characters, empty string clears)",
+    )
+
     return parser
 
 
@@ -159,6 +179,110 @@ def handle_delete_command(args: argparse.Namespace, storage: TaskStorage) -> int
     # Format and print appropriate message
     if was_deleted:
         success_msg = f"Task deleted successfully (ID: {task_id})"
+        print(success_msg)
+        return 0
+    else:
+        error_msg = f"Task not found (ID: {task_id})"
+        error_output = format_error_message(error_msg)
+        print(error_output, file=sys.stderr)
+        return 1
+
+
+def format_update_success_message(task: Task) -> str:
+    """
+    Format task details as update success message.
+
+    Args:
+        task: The updated Task instance to format
+
+    Returns:
+        Formatted multi-line success message
+    """
+    lines = [
+        "Task updated successfully",
+        f"ID: {task.id}",
+        f"Title: {task.title}",
+    ]
+
+    if task.description:
+        lines.append(f"Description: {task.description}")
+    else:
+        lines.append("Description: (none)")
+
+    lines.append(f"Status: {task.status}")
+
+    return "\n".join(lines)
+
+
+def handle_update_command(args: argparse.Namespace, storage: TaskStorage) -> int:
+    """
+    Handle the update command.
+
+    Validates the task ID and update arguments, performs the update, and prints
+    appropriate success or error messages.
+
+    Args:
+        args: Parsed command-line arguments with task_id, title, desc attributes
+        storage: TaskStorage instance to update in
+
+    Returns:
+        Exit code: 0 for success, 1 for error
+
+    Examples:
+        >>> from argparse import Namespace
+        >>> storage = TaskStorage()
+        >>> task = storage.add("Test task", "Original description")
+        >>> args = Namespace(task_id="1", title="Updated task", desc=None)
+        >>> handle_update_command(args, storage)
+        Task updated successfully
+        ID: 1
+        Title: Updated task
+        Description: Original description
+        Status: incomplete
+        0
+    """
+    from src.validators import validate_task_id
+
+    # Validate task ID format
+    is_valid, error_msg, task_id = validate_task_id(args.task_id)
+    if not is_valid:
+        error_output = format_error_message(error_msg)
+        print(error_output, file=sys.stderr)
+        return 1
+
+    # At this point, task_id is guaranteed to be int (not None) due to validation
+    assert task_id is not None
+
+    # Check at least one of --title or --desc is provided
+    if args.title is None and args.desc is None:
+        error_output = format_error_message(
+            "At least one of --title or --desc must be provided"
+        )
+        print(error_output, file=sys.stderr)
+        return 1
+
+    # Validate title if provided
+    if args.title is not None:
+        title_valid, title_error = validate_title(args.title)
+        if not title_valid:
+            error_output = format_error_message(title_error)
+            print(error_output, file=sys.stderr)
+            return 1
+
+    # Validate description if provided
+    if args.desc is not None:
+        desc_valid, desc_error = validate_description(args.desc)
+        if not desc_valid:
+            error_output = format_error_message(desc_error)
+            print(error_output, file=sys.stderr)
+            return 1
+
+    # Attempt update
+    updated_task = storage.update(task_id, title=args.title, description=args.desc)
+
+    # Format and print appropriate message
+    if updated_task is not None:
+        success_msg = format_update_success_message(updated_task)
         print(success_msg)
         return 0
     else:

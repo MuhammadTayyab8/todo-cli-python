@@ -5,6 +5,7 @@ A simple, robust command-line todo list application built with Python 3.13+ foll
 ## Features
 
 - **Add tasks** with title and optional description
+- **Update tasks** by ID (title, description, or both)
 - **Delete tasks** by ID with confirmation messages
 - **Input validation** with clear error messages
 - **Unicode support** for international characters and emojis
@@ -81,6 +82,39 @@ Output:
 Task deleted successfully (ID: 2)
 ```
 
+### Update a task's title only
+
+```bash
+uv run python -m src.main update 1 --title "Buy weekly groceries"
+```
+
+Output:
+```
+Task updated successfully
+  ID: 1
+  Title: Buy weekly groceries
+  Description: (none)
+  Status: incomplete
+```
+
+### Update a task's description only
+
+```bash
+uv run python -m src.main update 1 --desc "Milk, eggs, bread, cheese"
+```
+
+### Update both title and description
+
+```bash
+uv run python -m src.main update 1 --title "Shopping" --desc "Saturday morning"
+```
+
+### Clear a task's description
+
+```bash
+uv run python -m src.main update 1 --desc ""
+```
+
 ### Unicode support
 
 ```bash
@@ -119,6 +153,26 @@ uv run python -m src.main delete abc
 # Negative ID
 uv run python -m src.main delete -5
 # Error: Task ID must be a positive integer
+```
+
+### Error handling for update command
+
+```bash
+# No update arguments provided
+uv run python -m src.main update 1
+# Error: At least one of --title or --desc must be provided
+
+# Non-existent task
+uv run python -m src.main update 999 --title "New title"
+# Error: Task not found (ID: 999)
+
+# Invalid ID format
+uv run python -m src.main update abc --title "New title"
+# Error: Task ID must be a positive integer
+
+# Empty title
+uv run python -m src.main update 1 --title ""
+# Error: Title cannot be empty
 ```
 
 ## Development
@@ -188,14 +242,14 @@ hackathon-2/
 - **Validation**: Two-layer validation (CLI validators + Task model)
 - **CLI Framework**: argparse (no external runtime dependencies)
 - **Error Handling**: Errors to stderr with exit code 1, success to stdout with exit code 0
-- **Testing**: pytest with 85.44% code coverage (87 tests: 44 unit + 43 integration)
+- **Testing**: pytest with 87.90% code coverage (127 tests: 83 unit + 44 integration)
 
 ## Test Coverage
 
-- **Total Coverage**: 85.44% (exceeds 80% minimum requirement)
-- **87 tests** organized into unit and integration suites
-  - 44 unit tests (validation, storage, models)
-  - 43 integration tests (CLI commands)
+- **Total Coverage**: 87.90% (exceeds 80% minimum requirement)
+- **127 tests** organized into unit and integration suites
+  - 83 unit tests (validation, storage, models)
+  - 44 integration tests (CLI commands)
 - **Test-Driven Development (TDD)**: All features implemented following Red-Green-Refactor cycle
 
 ## Validation Rules
@@ -210,7 +264,7 @@ hackathon-2/
 - Maximum 500 characters
 - Supports Unicode characters and multiline text
 
-### Task ID (for delete command)
+### Task ID (for delete and update commands)
 - Must be a positive integer (≥ 1)
 - Deleted IDs are never reused (maintains sequential integrity)
 
