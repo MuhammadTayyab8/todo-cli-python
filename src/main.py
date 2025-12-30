@@ -6,6 +6,7 @@ from src.cli import (
     create_parser,
     handle_add_command,
     handle_delete_command,
+    handle_list_command,
     handle_update_command,
 )
 from src.storage import TaskStorage
@@ -38,6 +39,8 @@ def main() -> int:
         return handle_delete_command(args, storage)
     elif args.command == "update":
         return handle_update_command(args, storage)
+    elif args.command == "list":
+        return handle_list_command(args, storage)
 
     # Unknown command (should not reach here due to argparse validation)
     return 1

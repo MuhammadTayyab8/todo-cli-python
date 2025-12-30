@@ -80,6 +80,47 @@ class TaskStorage:
         """
         return self._tasks.copy()
 
+    def list_tasks(self) -> list[str]:
+        """
+        Get all tasks formatted for display.
+
+        Each task is formatted as:
+            [ID] SYMBOL Title
+                Description (or "(none)")
+
+        Where SYMBOL is "✓" for complete or "✗" for incomplete.
+
+        Tasks are returned in ascending ID order (creation order).
+
+        Returns:
+            List of formatted task strings, one per task, in ID order
+
+        Examples:
+            >>> storage = TaskStorage()
+            >>> storage.add("Buy groceries", "Milk, eggs")
+            >>> storage.add("Call dentist")
+            >>> storage.list_tasks()
+            ['[1] ✗ Buy groceries\\n    Milk, eggs', '[2] ✗ Call dentist\\n    (none)']
+        """
+        result: list[str] = []
+        # Sort tasks by ID to ensure ascending order
+        sorted_tasks = sorted(self._tasks, key=lambda t: t.id)
+        for task in sorted_tasks:
+            # Determine status symbol
+            symbol = "✓" if task.status == "complete" else "✗"
+
+            # Format description
+            description = task.description if task.description is not None else "(none)"
+
+            # Format single task line
+            task_lines = [
+                f"[{task.id}] {symbol} {task.title}",
+                f"    {description}",
+            ]
+            result.append("\n".join(task_lines))
+
+        return result
+
     def delete(self, task_id: int) -> bool:
         """
         Delete task by ID.

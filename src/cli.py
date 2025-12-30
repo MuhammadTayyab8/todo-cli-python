@@ -58,6 +58,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="New task description (max 500 characters, empty string clears)",
     )
 
+    # List command
+    subparsers.add_parser("list", help="List all tasks")
+
     return parser
 
 
@@ -290,3 +293,111 @@ def handle_update_command(args: argparse.Namespace, storage: TaskStorage) -> int
         error_output = format_error_message(error_msg)
         print(error_output, file=sys.stderr)
         return 1
+
+
+def format_list_header() -> str:
+    """
+    Format the list command header.
+
+    Returns:
+        Formatted header with divider line
+    """
+    return "TODO LIST:\n────────────────────────────────────"
+
+
+def format_list_empty() -> str:
+    """
+    Format the empty list message.
+
+    Returns:
+        Formatted empty list message
+    """
+    return "No tasks found"
+
+
+def format_summary(tasks: list[Task]) -> str:
+    """
+    Format task summary with counts.
+
+    Args:
+        tasks: List of Task objects to summarize
+
+    Returns:
+        Formatted summary string like "Total: 3 tasks (1 completed, 2 pending)"
+    """
+    total = len(tasks)
+    completed = sum(1 for task in tasks if task.status == "complete")
+    pending = total - completed
+
+    # Handle singular/plural for total
+    if total == 1:
+        total_str = "1 task"
+    else:
+        total_str = f"{total} tasks"
+
+    return f"Total: {total_str} ({completed} completed, {pending} pending)"
+
+
+def format_list_output(tasks: list[str], summary: str = "") -> str:
+    """
+    Format the full list output.
+
+    Args:
+        tasks: List of formatted task strings
+        summary: Summary string to append (optional)
+
+    Returns:
+        Complete formatted list output
+    """
+    if not tasks:
+        return format_list_header() + "\n" + format_list_empty()
+
+    header = format_list_header()
+    output = header + "\n" + "\n".join(tasks)
+
+    if summary:
+        output += "\n" + summary
+
+    return output
+
+
+def handle_list_command(args: argparse.Namespace, storage: TaskStorage) -> int:
+    """
+    Handle 'todo list' command.
+
+    Lists all tasks with their details in a readable format.
+
+    Args:
+        args: Parsed arguments (no specific args for list)
+        storage: TaskStorage instance
+
+    Returns:
+        Exit code (0 for success, list command always succeeds)
+
+    Examples:
+        >>> from argparse import Namespace
+        >>> storage = TaskStorage()
+        >>> storage.add("Buy groceries", "Milk and eggs")
+        >>> args = Namespace()
+        >>> handle_list_command(args, storage)
+        TODO LIST:
+        ───────────────────────────────────
+        [1] ✗ Buy groceries
+            Milk and eggs
+        Total: 1 task (0 completed, 1 pending)
+        0
+    """
+    # Get all tasks formatted for display
+    task_lines = storage.list_tasks()
+
+    # Get all tasks for summary
+    all_tasks = storage.list_all()
+
+    # Generate summary
+    summary = format_summary(all_tasks) if all_tasks else ""
+
+    # Format and print the output
+    output = format_list_output(task_lines, summary)
+    print(output)
+
+    return 0
