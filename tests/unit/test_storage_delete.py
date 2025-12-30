@@ -1,11 +1,19 @@
 """Unit tests for TaskStorage.delete() method."""
 
+import tempfile
+from pathlib import Path
+
 from src.storage import TaskStorage
+
+
+def get_temp_storage() -> TaskStorage:
+    """Create a TaskStorage with a temporary file that gets deleted after."""
+    return TaskStorage(storage_file=Path(tempfile.mktemp(suffix=".json")))
 
 
 def test_delete_existing_task_returns_true():
     """Test that deleting an existing task returns True."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Test task")
 
     result = storage.delete(task.id)
@@ -15,7 +23,7 @@ def test_delete_existing_task_returns_true():
 
 def test_delete_non_existent_task_returns_false():
     """Test that deleting a non-existent task returns False."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Test task")
 
     result = storage.delete(999)
@@ -25,7 +33,7 @@ def test_delete_non_existent_task_returns_false():
 
 def test_delete_from_empty_storage_returns_false():
     """Test that deleting from empty storage returns False."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
 
     result = storage.delete(1)
 
@@ -34,7 +42,7 @@ def test_delete_from_empty_storage_returns_false():
 
 def test_delete_removes_task_from_storage():
     """Test that delete actually removes the task (verify with get)."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Test task")
 
     storage.delete(task.id)
@@ -45,7 +53,7 @@ def test_delete_removes_task_from_storage():
 
 def test_delete_doesnt_affect_other_tasks():
     """Test that deleting task 2 from [1,2,3] leaves 1 and 3 intact."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task1 = storage.add("Task 1")
     task2 = storage.add("Task 2")
     task3 = storage.add("Task 3")
@@ -59,7 +67,7 @@ def test_delete_doesnt_affect_other_tasks():
 
 def test_delete_multiple_tasks_in_sequence():
     """Test deleting multiple tasks one by one."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task1 = storage.add("Task 1")
     task2 = storage.add("Task 2")
     task3 = storage.add("Task 3")
@@ -76,7 +84,7 @@ def test_delete_multiple_tasks_in_sequence():
 
 def test_storage_count_decreases_after_delete():
     """Test that count() decrements after successful deletion."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Task 1")
     task2 = storage.add("Task 2")
     storage.add("Task 3")
@@ -91,7 +99,7 @@ def test_storage_count_decreases_after_delete():
 
 def test_storage_count_unchanged_after_failed_delete():
     """Test that count remains the same when delete fails (not found)."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Task 1")
     storage.add("Task 2")
 
@@ -105,7 +113,7 @@ def test_storage_count_unchanged_after_failed_delete():
 
 def test_deleting_task_doesnt_affect_id_sequence():
     """Test that deleting a task doesn't affect ID sequence for future additions."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task1 = storage.add("Task 1")
     task2 = storage.add("Task 2")
     task3 = storage.add("Task 3")

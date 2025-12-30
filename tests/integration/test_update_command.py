@@ -1,11 +1,18 @@
 """Integration tests for the 'update' CLI command."""
 
 import sys
+import tempfile
 from io import StringIO
+from pathlib import Path
 
 from src.cli import create_parser, handle_update_command
 from src.models import Task
 from src.storage import TaskStorage
+
+
+def get_temp_storage() -> TaskStorage:
+    """Create a TaskStorage with a temporary file that gets deleted after."""
+    return TaskStorage(storage_file=Path(tempfile.mktemp(suffix=".json")))
 
 
 class TestUpdateTitleOnly:
@@ -14,7 +21,7 @@ class TestUpdateTitleOnly:
     # T024: Test update title only success
     def test_update_title_only_success(self) -> None:
         """Test successful task update with title only."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title", "Original description")
 
         parser = create_parser()
@@ -45,7 +52,7 @@ class TestUpdateTitleOnly:
     # T025: Test update title success message format
     def test_update_title_success_message_format(self) -> None:
         """Test that success message includes all required fields."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title", "Original description")
 
         parser = create_parser()
@@ -69,7 +76,7 @@ class TestUpdateTitleOnly:
     # T026: Test update title success to stdout
     def test_update_title_success_to_stdout(self) -> None:
         """Test that success message goes to stdout, not stderr."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title")
 
         parser = create_parser()
@@ -95,7 +102,7 @@ class TestUpdateTitleOnly:
     # T027: Test update title exit code 0
     def test_update_title_exit_code_0(self) -> None:
         """Test that successful update returns exit code 0."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title")
 
         parser = create_parser()
@@ -114,7 +121,7 @@ class TestUpdateTitleOnly:
     # T028: Test update title preserves incomplete status
     def test_update_title_preserves_incomplete_status(self) -> None:
         """Test that updating title preserves 'incomplete' status."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title")
         assert task.status == "incomplete"
 
@@ -138,7 +145,7 @@ class TestUpdateTitleOnly:
     # T029: Test update title preserves complete status
     def test_update_title_preserves_complete_status(self) -> None:
         """Test that updating title preserves 'complete' status."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title")
 
         # Manually set status to complete for testing
@@ -171,7 +178,7 @@ class TestUpdateTitleOnly:
     # T030: Test update title unicode support
     def test_update_title_unicode_support(self) -> None:
         """Test that Unicode characters in title are supported."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title")
 
         parser = create_parser()
@@ -194,7 +201,7 @@ class TestUpdateTitleOnly:
     # T031: Test update title boundary 100 chars
     def test_update_title_boundary_100_chars(self) -> None:
         """Test that exactly 100 chars title succeeds."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title")
 
         title_100 = "A" * 100
@@ -220,7 +227,7 @@ class TestUpdateDescriptionOnly:
     # T041: Test update description only success
     def test_update_description_only_success(self) -> None:
         """Test successful task update with description only."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title", "Original description")
 
         parser = create_parser()
@@ -252,7 +259,7 @@ class TestUpdateDescriptionOnly:
     # T042: Test update description adds to empty
     def test_update_description_adds_to_empty(self) -> None:
         """Test adding description to task that had no description."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title")  # No description
         assert task.description is None
 
@@ -278,7 +285,7 @@ class TestUpdateDescriptionOnly:
     # T043: Test update description clears with empty string
     def test_update_description_clears_with_empty_string(self) -> None:
         """Test that --desc '' clears the description."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title", "Original description")
 
         parser = create_parser()
@@ -301,7 +308,7 @@ class TestUpdateDescriptionOnly:
     # T044: Test update description boundary 500 chars
     def test_update_description_boundary_500_chars(self) -> None:
         """Test that exactly 500 chars description succeeds."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title")
 
         desc_500 = "A" * 500
@@ -323,7 +330,7 @@ class TestUpdateDescriptionOnly:
     # T045: Test update description unicode support
     def test_update_description_unicode_support(self) -> None:
         """Test that Unicode characters in description are supported."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title")
 
         parser = create_parser()
@@ -352,7 +359,7 @@ class TestUpdateBothTitleAndDescription:
     # T051: Test update both title and description success
     def test_update_both_title_and_description_success(self) -> None:
         """Test successful task update with both title and description."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title", "Original description")
 
         parser = create_parser()
@@ -393,7 +400,7 @@ class TestUpdateBothTitleAndDescription:
     # T052: Test update both adds description to empty
     def test_update_both_adds_description_to_empty(self) -> None:
         """Test updating both fields when task originally had no description."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title")  # No description
         assert task.description is None
 
@@ -428,7 +435,7 @@ class TestUpdateBothTitleAndDescription:
     # T053: Test update both success message format
     def test_update_both_success_message_format(self) -> None:
         """Test that success message includes all required fields when updating both."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Original title", "Original description")
 
         parser = create_parser()
@@ -465,7 +472,7 @@ class TestUpdateErrorHandling:
     # T056: Test update non-existent id error
     def test_update_non_existent_id_error(self) -> None:
         """Test that updating a non-existent task ID returns error."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         storage.add("Existing task")  # ID 1 exists
 
         parser = create_parser()
@@ -486,7 +493,7 @@ class TestUpdateErrorHandling:
     # T057: Test update invalid id non-numeric error
     def test_update_invalid_id_non_numeric_error(self) -> None:
         """Test that non-numeric task ID returns error."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         storage.add("Existing task")
 
         parser = create_parser()
@@ -507,7 +514,7 @@ class TestUpdateErrorHandling:
     # T058: Test update invalid id negative error
     def test_update_invalid_id_negative_error(self) -> None:
         """Test that negative task ID returns error."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         storage.add("Existing task")
 
         parser = create_parser()
@@ -528,7 +535,7 @@ class TestUpdateErrorHandling:
     # T059: Test update invalid id zero error
     def test_update_invalid_id_zero_error(self) -> None:
         """Test that task ID 0 returns error."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         storage.add("Existing task")
 
         parser = create_parser()
@@ -549,7 +556,7 @@ class TestUpdateErrorHandling:
     # T060: Test update no args error
     def test_update_no_args_error(self) -> None:
         """Test that update without --title or --desc returns error."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Existing task")
 
         parser = create_parser()
@@ -570,7 +577,7 @@ class TestUpdateErrorHandling:
     # T061: Test update empty title error
     def test_update_empty_title_error(self) -> None:
         """Test that empty title returns error."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Existing task")
 
         parser = create_parser()
@@ -591,7 +598,7 @@ class TestUpdateErrorHandling:
     # T062: Test update whitespace title error
     def test_update_whitespace_title_error(self) -> None:
         """Test that whitespace-only title returns error."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Existing task")
 
         parser = create_parser()
@@ -612,7 +619,7 @@ class TestUpdateErrorHandling:
     # T063: Test update title too long error
     def test_update_title_too_long_error(self) -> None:
         """Test that title >100 chars returns error with length."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Existing task")
 
         long_title = "A" * 101
@@ -635,7 +642,7 @@ class TestUpdateErrorHandling:
     # T064: Test update description too long error
     def test_update_description_too_long_error(self) -> None:
         """Test that description >500 chars returns error."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Existing task")
 
         long_desc = "A" * 501
@@ -658,7 +665,7 @@ class TestUpdateErrorHandling:
     # T065: Test update error to stderr
     def test_update_error_to_stderr(self) -> None:
         """Test that errors go to stderr, not stdout."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         task = storage.add("Existing task")
 
         parser = create_parser()
@@ -684,7 +691,7 @@ class TestUpdateErrorHandling:
     # T066: Test update error exit code 1
     def test_update_error_exit_code_1(self) -> None:
         """Test that errors return exit code 1."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         storage.add("Existing task")
 
         parser = create_parser()

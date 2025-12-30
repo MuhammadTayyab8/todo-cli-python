@@ -1,16 +1,23 @@
 """Integration tests for the 'list' CLI command."""
 
 import sys
+import tempfile
 from io import StringIO
+from pathlib import Path
 
 from src.cli import create_parser, handle_list_command
 from src.storage import TaskStorage
 
 
+def get_temp_storage() -> TaskStorage:
+    """Create a TaskStorage with a temporary file that gets deleted after."""
+    return TaskStorage(storage_file=Path(tempfile.mktemp(suffix=".json")))
+
+
 # T018 [US1]: Test list empty shows no tasks message
 def test_list_empty_shows_no_tasks_message() -> None:
     """Test that empty storage displays 'No tasks found' message."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     parser = create_parser()
     args = parser.parse_args(["list"])
 
@@ -29,7 +36,7 @@ def test_list_empty_shows_no_tasks_message() -> None:
 # T019 [US1]: Test list single task
 def test_list_single_task() -> None:
     """Test that single task displays correctly."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Buy groceries")
     parser = create_parser()
     args = parser.parse_args(["list"])
@@ -50,7 +57,7 @@ def test_list_single_task() -> None:
 # T020 [US1]: Test list multiple tasks
 def test_list_multiple_tasks() -> None:
     """Test that multiple tasks are all displayed."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Task 1")
     storage.add("Task 2")
     storage.add("Task 3")
@@ -74,7 +81,7 @@ def test_list_multiple_tasks() -> None:
 # T021 [US1]: Test list multiple tasks display order
 def test_list_multiple_tasks_display_order() -> None:
     """Test that tasks are displayed in ID order regardless of addition order."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     # Add tasks - they will get IDs 1, 2, 3 in addition order
     storage.add("First task")  # ID 1
     storage.add("Second task")  # ID 2
@@ -105,7 +112,7 @@ def test_list_multiple_tasks_display_order() -> None:
 # T022 [US1]: Test list header format
 def test_list_header_format() -> None:
     """Test that list header matches specification."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Buy groceries")
     parser = create_parser()
     args = parser.parse_args(["list"])
@@ -125,7 +132,7 @@ def test_list_header_format() -> None:
 # T023 [US1]: Test list divider present
 def test_list_divider_present() -> None:
     """Test that divider line is present in output."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Buy groceries")
     parser = create_parser()
     args = parser.parse_args(["list"])
@@ -146,7 +153,7 @@ def test_list_divider_present() -> None:
 # T024 [US1]: Test list exit code 0
 def test_list_exit_code_0() -> None:
     """Test that list command always returns exit code 0."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     parser = create_parser()
     args = parser.parse_args(["list"])
 
@@ -158,7 +165,7 @@ def test_list_exit_code_0() -> None:
 # T029 [US2]: Test list None description shows (none)
 def test_list_none_description_shows_none() -> None:
     """Test that task with no description shows '(none)'."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Buy groceries")  # No description
     parser = create_parser()
     args = parser.parse_args(["list"])
@@ -178,7 +185,7 @@ def test_list_none_description_shows_none() -> None:
 # T030 [US2]: Test list title 100 chars displays
 def test_list_title_100_chars() -> None:
     """Test that 100-character title displays fully without truncation."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     long_title = "A" * 100  # Exactly 100 characters
     storage.add(long_title)
     parser = create_parser()
@@ -199,7 +206,7 @@ def test_list_title_100_chars() -> None:
 # T031 [US2]: Test list description 500 chars displays
 def test_list_description_500_chars() -> None:
     """Test that 500-character description displays fully without truncation."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     long_desc = "B" * 500  # Exactly 500 characters
     storage.add("Buy groceries", long_desc)
     parser = create_parser()
@@ -220,7 +227,7 @@ def test_list_description_500_chars() -> None:
 # T036 [US3]: Test list incomplete status symbol
 def test_list_incomplete_status_symbol() -> None:
     """Test that incomplete tasks show '✗' symbol."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Buy groceries")  # Default is incomplete
     parser = create_parser()
     args = parser.parse_args(["list"])
@@ -240,7 +247,7 @@ def test_list_incomplete_status_symbol() -> None:
 # T037 [US3]: Test list complete status symbol
 def test_list_complete_status_symbol() -> None:
     """Test that complete tasks show '✓' symbol."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Buy groceries")
     storage._tasks[0].status = "complete"  # Mark as complete
     parser = create_parser()
@@ -261,7 +268,7 @@ def test_list_complete_status_symbol() -> None:
 # T038 [US3]: Test list summary counts completed
 def test_list_summary_counts_completed() -> None:
     """Test that summary shows correct completed count."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Task 1")
     storage.add("Task 2")
     storage._tasks[0].status = "complete"  # Task 1 complete
@@ -284,7 +291,7 @@ def test_list_summary_counts_completed() -> None:
 # T039 [US3]: Test list summary counts pending
 def test_list_summary_counts_pending() -> None:
     """Test that summary shows correct pending count."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Task 1")
     storage.add("Task 2")
     storage.add("Task 3")
@@ -308,7 +315,7 @@ def test_list_summary_counts_pending() -> None:
 # T040 [US3]: Test list singular task
 def test_list_singular_task() -> None:
     """Test that single task uses singular 'task' in summary."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Single task")
     parser = create_parser()
     args = parser.parse_args(["list"])

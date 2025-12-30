@@ -1,17 +1,65 @@
 """In-memory storage for tasks with ID generation."""
 
+import json
 from datetime import datetime
+from pathlib import Path
 
 from src.models import Task
 
+# Default storage file path
+STORAGE_FILE = Path("tasks.json")
+
 
 class TaskStorage:
-    """In-memory storage for tasks with ID generation."""
+    """In-memory storage for tasks with ID generation and file persistence."""
 
-    def __init__(self) -> None:
-        """Initialize empty task storage."""
+    def __init__(self, storage_file: Path | None = None) -> None:
+        """Initialize task storage, loading from file if exists.
+
+        Args:
+            storage_file: Optional path to storage file (default: tasks.json)
+        """
+        self._storage_file = storage_file or STORAGE_FILE
         self._tasks: list[Task] = []
         self._next_id: int = 1
+        self._load()
+
+    def _load(self) -> None:
+        """Load tasks from JSON file."""
+        if self._storage_file.exists():
+            try:
+                data = json.loads(self._storage_file.read_text())
+                self._next_id = data.get("next_id", 1)
+                for task_data in data.get("tasks", []):
+                    task = Task(
+                        id=task_data["id"],
+                        title=task_data["title"],
+                        description=task_data.get("description"),
+                        status=task_data.get("status", "incomplete"),
+                        created_at=datetime.fromisoformat(task_data["created_at"]),
+                    )
+                    self._tasks.append(task)
+            except (json.JSONDecodeError, KeyError, OSError):
+                # If file is corrupted, start fresh
+                self._tasks = []
+                self._next_id = 1
+
+    def _save(self) -> None:
+        """Save tasks to JSON file."""
+        data = {
+            "next_id": self._next_id,
+            "tasks": [
+                {
+                    "id": task.id,
+                    "title": task.title,
+                    "description": task.description,
+                    "status": task.status,
+                    "created_at": task.created_at.isoformat(),
+                }
+                for task in self._tasks
+            ],
+        }
+        self._storage_file.write_text(json.dumps(data, indent=2))
 
     def add(self, title: str, description: str | None = None) -> Task:
         """
@@ -33,6 +81,7 @@ class TaskStorage:
         )
         self._tasks.append(task)
         self._next_id += 1
+        self._save()
         return task
 
     def get(self, task_id: int) -> Task | None:
@@ -145,6 +194,7 @@ class TaskStorage:
         for i, task in enumerate(self._tasks):
             if task.id == task_id:
                 del self._tasks[i]
+                self._save()
                 return True
         return False
 
@@ -199,5 +249,6 @@ class TaskStorage:
                     created_at=task.created_at,
                 )
                 self._tasks[i] = updated_task
+                self._save()
                 return updated_task
         return None

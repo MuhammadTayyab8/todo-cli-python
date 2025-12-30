@@ -1,12 +1,21 @@
 """Unit tests for TaskStorage.update() method."""
 
+import tempfile
+from pathlib import Path
+
+from src.models import Task
 from src.storage import TaskStorage
+
+
+def get_temp_storage() -> TaskStorage:
+    """Create a TaskStorage with a temporary file that gets deleted after."""
+    return TaskStorage(storage_file=Path(tempfile.mktemp(suffix=".json")))
 
 
 # T004: Test update title only preserves description
 def test_update_title_only_preserves_description():
     """Test that updating only the title preserves the existing description."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Original title", "Original description")
 
     updated_task = storage.update(task.id, title="New title")
@@ -19,7 +28,7 @@ def test_update_title_only_preserves_description():
 # T005: Test update description only preserves title
 def test_update_description_only_preserves_title():
     """Test that updating only the description preserves the existing title."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Original title", "Original description")
 
     updated_task = storage.update(task.id, description="New description")
@@ -32,7 +41,7 @@ def test_update_description_only_preserves_title():
 # T006: Test update both title and description
 def test_update_both_title_and_description():
     """Test that updating both title and description works correctly."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Original title", "Original description")
 
     updated_task = storage.update(
@@ -47,7 +56,7 @@ def test_update_both_title_and_description():
 # T007: Test update non-existent task returns None
 def test_update_non_existent_task_returns_none():
     """Test that updating a non-existent task returns None."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Existing task")
 
     result = storage.update(999, title="New title")
@@ -58,7 +67,7 @@ def test_update_non_existent_task_returns_none():
 # T008: Test update empty storage returns None
 def test_update_empty_storage_returns_none():
     """Test that updating from empty storage returns None."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
 
     result = storage.update(1, title="New title")
 
@@ -68,7 +77,7 @@ def test_update_empty_storage_returns_none():
 # T009: Test update preserves incomplete status
 def test_update_preserves_incomplete_status():
     """Test that updating a task preserves 'incomplete' status."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Original title")
     assert task.status == "incomplete"
 
@@ -81,11 +90,8 @@ def test_update_preserves_incomplete_status():
 # T010: Test update preserves complete status
 def test_update_preserves_complete_status():
     """Test that updating a task preserves 'complete' status."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Original title")
-    # Manually set status to complete for testing
-    # Since Task is a dataclass, we need to create a completed task directly
-    from src.models import Task
 
     completed_task = Task(
         id=task.id,
@@ -106,7 +112,7 @@ def test_update_preserves_complete_status():
 # T011: Test update preserves created_at timestamp
 def test_update_preserves_created_at():
     """Test that updating a task preserves the created_at timestamp."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Original title")
     original_created_at = task.created_at
 
@@ -119,7 +125,7 @@ def test_update_preserves_created_at():
 # T012: Test update with empty description clears it
 def test_update_with_empty_description_clears_it():
     """Test that updating with empty string clears the description."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Original title", "Original description")
 
     updated_task = storage.update(task.id, description="")
@@ -131,7 +137,7 @@ def test_update_with_empty_description_clears_it():
 # T013: Test update does not affect other tasks
 def test_update_does_not_affect_other_tasks():
     """Test that updating one task doesn't affect other tasks."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task1 = storage.add("Task 1", "Description 1")
     task2 = storage.add("Task 2", "Description 2")
     task3 = storage.add("Task 3", "Description 3")
@@ -154,7 +160,7 @@ def test_update_does_not_affect_other_tasks():
 # T014: Test update returns updated task
 def test_update_returns_updated_task():
     """Test that update returns the updated Task object."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Original title", "Original description")
 
     updated_task = storage.update(task.id, title="New title")
@@ -171,7 +177,7 @@ def test_update_returns_updated_task():
 # T015: Test update strips title whitespace
 def test_update_strips_title_whitespace():
     """Test that title whitespace is stripped during update."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Original title")
 
     updated_task = storage.update(task.id, title="  New title with spaces  ")
@@ -183,7 +189,7 @@ def test_update_strips_title_whitespace():
 # T016: Test update preserves description whitespace
 def test_update_preserves_description_whitespace():
     """Test that description whitespace is preserved during update."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Original title")
 
     updated_task = storage.update(task.id, description="  Description with spaces  ")

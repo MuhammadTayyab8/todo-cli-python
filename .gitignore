@@ -72,3 +72,6 @@ dmypy.json
 *.temp
 .temp/
 .tmp/
+
+# Task storage file
+tasks.json

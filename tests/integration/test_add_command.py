@@ -1,10 +1,17 @@
 """Integration tests for the 'add' command."""
 
 import sys
+import tempfile
 from io import StringIO
+from pathlib import Path
 
 from src.cli import create_parser, handle_add_command
 from src.storage import TaskStorage
+
+
+def get_temp_storage() -> TaskStorage:
+    """Create a TaskStorage with a temporary file that gets deleted after."""
+    return TaskStorage(storage_file=Path(tempfile.mktemp(suffix=".json")))
 
 
 class TestAddCommandTitleOnly:
@@ -12,7 +19,7 @@ class TestAddCommandTitleOnly:
 
     def test_add_command_success_title_only(self) -> None:
         """Test successful task creation with title only."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         args = parser.parse_args(["add", "Buy groceries"])
 
@@ -44,7 +51,7 @@ class TestAddCommandTitleOnly:
 
     def test_add_command_success_message_format(self) -> None:
         """Test that success message includes all required fields."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         args = parser.parse_args(["add", "Review PR"])
 
@@ -65,7 +72,7 @@ class TestAddCommandTitleOnly:
 
     def test_add_command_sequential_ids(self) -> None:
         """Test that adding multiple tasks generates sequential IDs."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
 
         # Add three tasks
@@ -90,7 +97,7 @@ class TestAddCommandTitleOnly:
 
     def test_add_command_output_to_stdout(self) -> None:
         """Test that success message goes to stdout, not stderr."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         args = parser.parse_args(["add", "Test task"])
 
@@ -113,7 +120,7 @@ class TestAddCommandTitleOnly:
 
     def test_add_command_exit_code_success(self) -> None:
         """Test that successful add returns exit code 0."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         args = parser.parse_args(["add", "Test task"])
 
@@ -133,7 +140,7 @@ class TestAddCommandTitleAndDescription:
 
     def test_add_command_success_title_and_description(self) -> None:
         """Test successful task creation with both title and description."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         args = parser.parse_args(
             ["add", "Review PR", "--description", "Check tests and security"]
@@ -168,7 +175,7 @@ class TestAddCommandTitleAndDescription:
 
     def test_add_command_unicode_title(self) -> None:
         """Test that Unicode characters in title are supported."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         args = parser.parse_args(["add", "Café 中文"])
 
@@ -188,7 +195,7 @@ class TestAddCommandTitleAndDescription:
 
     def test_add_command_unicode_description(self) -> None:
         """Test that Unicode characters in description are supported."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         args = parser.parse_args(
             ["add", "Task", "--description", "中文 描述 with émojis 🎉"]
@@ -210,7 +217,7 @@ class TestAddCommandTitleAndDescription:
 
     def test_add_command_multiline_description(self) -> None:
         """Test that multiline descriptions with newlines are preserved."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         description = "Line 1\nLine 2\nLine 3"
         args = parser.parse_args(["add", "Task", "--description", description])
@@ -230,7 +237,7 @@ class TestAddCommandTitleAndDescription:
 
     def test_add_command_duplicate_titles_allowed(self) -> None:
         """Test that duplicate titles with different descriptions are allowed."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
 
         # Add first task
@@ -266,7 +273,7 @@ class TestAddCommandValidation:
 
     def test_add_command_empty_title_error(self) -> None:
         """Test that empty title shows error message."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         args = parser.parse_args(["add", ""])
 
@@ -289,7 +296,7 @@ class TestAddCommandValidation:
 
     def test_add_command_whitespace_only_title_error(self) -> None:
         """Test that whitespace-only title shows error."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         args = parser.parse_args(["add", "   "])
 
@@ -308,7 +315,7 @@ class TestAddCommandValidation:
 
     def test_add_command_title_too_long_error(self) -> None:
         """Test that title >100 chars shows error with length."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         long_title = "A" * 101
         args = parser.parse_args(["add", long_title])
@@ -329,7 +336,7 @@ class TestAddCommandValidation:
 
     def test_add_command_description_too_long_error(self) -> None:
         """Test that description >500 chars shows error."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         long_desc = "A" * 501
         args = parser.parse_args(["add", "Task", "--description", long_desc])
@@ -350,7 +357,7 @@ class TestAddCommandValidation:
 
     def test_add_command_title_boundary_100_chars_success(self) -> None:
         """Test that exactly 100 chars title succeeds."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         title_100 = "A" * 100
         args = parser.parse_args(["add", title_100])
@@ -370,7 +377,7 @@ class TestAddCommandValidation:
 
     def test_add_command_description_boundary_500_chars_success(self) -> None:
         """Test that exactly 500 chars description succeeds."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         desc_500 = "A" * 500
         args = parser.parse_args(["add", "Task", "--description", desc_500])
@@ -390,7 +397,7 @@ class TestAddCommandValidation:
 
     def test_add_command_error_output_to_stderr(self) -> None:
         """Test that errors go to stderr not stdout."""
-        storage = TaskStorage()
+        storage = get_temp_storage()
         parser = create_parser()
         args = parser.parse_args(["add", ""])
 

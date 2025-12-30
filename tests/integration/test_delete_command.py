@@ -1,15 +1,22 @@
 """Integration tests for the 'delete' command."""
 
 import sys
+import tempfile
 from io import StringIO
+from pathlib import Path
 
 from src.cli import create_parser, handle_delete_command
 from src.storage import TaskStorage
 
 
+def get_temp_storage() -> TaskStorage:
+    """Create a TaskStorage with a temporary file that gets deleted after."""
+    return TaskStorage(storage_file=Path(tempfile.mktemp(suffix=".json")))
+
+
 def test_delete_command_success():
     """Test successful deletion returns exit code 0."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Test task")
 
     parser = create_parser()
@@ -22,7 +29,7 @@ def test_delete_command_success():
 
 def test_delete_command_success_message_format():
     """Test success message format matches spec."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Test task")
 
     parser = create_parser()
@@ -42,7 +49,7 @@ def test_delete_command_success_message_format():
 
 def test_delete_command_output_to_stdout():
     """Test success message goes to stdout not stderr."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Test task")
 
     parser = create_parser()
@@ -67,7 +74,7 @@ def test_delete_command_output_to_stdout():
 
 def test_delete_command_exit_code_success():
     """Test exit code 0 for successful delete."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Test task")
 
     parser = create_parser()
@@ -83,7 +90,7 @@ def test_delete_command_exit_code_success():
 
 def test_delete_command_non_existent_task_error():
     """Test deleting non-existent task ID 999 returns 'Task not found' error."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     storage.add("Test task")
 
     parser = create_parser()
@@ -103,7 +110,7 @@ def test_delete_command_non_existent_task_error():
 
 def test_delete_from_empty_list_error():
     """Test deleting from empty storage returns error."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
 
     parser = create_parser()
     args = parser.parse_args(["delete", "1"])
@@ -122,7 +129,7 @@ def test_delete_from_empty_list_error():
 
 def test_delete_already_deleted_task_error():
     """Test idempotent deletion - deleting same task twice returns error."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task = storage.add("Test task")
 
     parser = create_parser()
@@ -147,7 +154,7 @@ def test_delete_already_deleted_task_error():
 
 def test_delete_middle_task_leaves_others():
     """Test deleting task 2 from [1,2,3] leaves tasks 1 and 3 intact."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task1 = storage.add("Task 1")
     task2 = storage.add("Task 2")
     task3 = storage.add("Task 3")
@@ -165,7 +172,7 @@ def test_delete_middle_task_leaves_others():
 
 def test_delete_error_messages_go_to_stderr():
     """Test error messages are output to stderr not stdout."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
 
     parser = create_parser()
     args = parser.parse_args(["delete", "999"])
@@ -190,7 +197,7 @@ def test_delete_error_messages_go_to_stderr():
 
 def test_delete_command_exit_code_error():
     """Test exit code 1 for error cases."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
 
     parser = create_parser()
     args = parser.parse_args(["delete", "999"])
@@ -205,7 +212,7 @@ def test_delete_command_exit_code_error():
 
 def test_delete_invalid_id_format_error():
     """Test invalid ID format 'abc' returns validation error."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
 
     parser = create_parser()
     args = parser.parse_args(["delete", "abc"])
@@ -224,7 +231,7 @@ def test_delete_invalid_id_format_error():
 
 def test_delete_negative_id_error():
     """Test negative ID '-5' returns validation error."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
 
     parser = create_parser()
     args = parser.parse_args(["delete", "-5"])
@@ -243,7 +250,7 @@ def test_delete_negative_id_error():
 
 def test_delete_zero_id_error():
     """Test zero ID '0' returns validation error."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
 
     parser = create_parser()
     args = parser.parse_args(["delete", "0"])
@@ -283,7 +290,7 @@ def test_delete_missing_id_argument():
 
 def test_delete_all_tasks_leaves_storage_empty():
     """Test deleting all tasks leaves storage with count=0."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task1 = storage.add("Task 1")
     task2 = storage.add("Task 2")
     task3 = storage.add("Task 3")
@@ -300,7 +307,7 @@ def test_delete_all_tasks_leaves_storage_empty():
 
 def test_adding_task_after_deletion_uses_next_sequential_id():
     """Test that adding a task after deletion uses the next sequential ID."""
-    storage = TaskStorage()
+    storage = get_temp_storage()
     task1 = storage.add("Task 1")
     task2 = storage.add("Task 2")
 
